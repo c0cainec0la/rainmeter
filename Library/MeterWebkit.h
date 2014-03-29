@@ -57,9 +57,6 @@ protected:
 	WebView* m_webView;
 	WebSession* m_session;
 
-	HBITMAP bitmap;
-	unsigned char* bitmap_buf = 0;
-
 private:
 	/*enum DRAWMODE
 	{
@@ -75,6 +72,9 @@ private:
 	bool m_NeedsRedraw;
 
 	//DRAWMODE m_DrawMode;
+
+	Gdiplus::Bitmap* bitmapOutput;
+	BITMAPINFOHEADER bih;
 
 	RECT m_ScaleMargins;
 };

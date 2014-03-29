@@ -20,16 +20,11 @@ enum BUTTON_STATE
 
 MeterWebkit::MeterWebkit(MeterWindow* meterWindow, const WCHAR* name) : Meter(meterWindow, name),
 m_NeedsRedraw(true),
-m_webView(nullptr),
-m_TextFormat(meterWindow->GetCanvas().CreateTextFormat())
+m_webView(nullptr)
 {
-	m_Text = L"testing testing 1234-5 sixty..";
 }
 
 MeterWebkit::~MeterWebkit(){
-	delete m_TextFormat;
-	m_TextFormat = nullptr;
-
 	m_webView->Destroy();
 	//m_webCore->Shutdown();
 	//WebCore::Shutdown();
@@ -43,6 +38,7 @@ void MeterWebkit::Initialize()
 void MeterWebkit::ReadOptions(ConfigParser& parser, const WCHAR* section)
 {
 	Meter::ReadOptions(parser, section);
+	m_Text = parser.ReadString(section, L"URL", L"http://www.clocklink.com/html5embed.php?clock=012&timezone=PST&color=black&size=170");
 	//m_Color = parser.ReadColor(section, L"FontColor", Color::Black);
 
 	InitWebview();
@@ -60,21 +56,24 @@ void MeterWebkit::InitWebview()
 
 	Gdiplus::Rect meterRect = GetMeterRectPadding();
 	m_webView = m_webCore->CreateWebView(500, 500, m_session);
-
-	WebURL url(WSLit("http://www.clocklink.com/html5embed.php?clock=012&timezone=PST&color=black&size=170"));
+	
+	char *dest = new char[8024];
+	const wchar_t *p = m_Text.c_str();
+	wcstombs(dest, p, 8024);
+	
+	WebURL url(WebString::CreateFromUTF8(dest, m_Text.length()));
 	m_webView->LoadURL(url);
 	m_webView->SetTransparent(true);
 
-	BITMAPINFOHEADER bih = { 0 };
+	delete dest;
+
+	bih = { 0 };
 	bih.biSize = sizeof(BITMAPINFOHEADER);
 	bih.biBitCount = 32;
 	bih.biCompression = BI_RGB;
 	bih.biPlanes = 1;
 	bih.biWidth = 512;
 	bih.biHeight = -(512);
-
-	HDC dc = CreateCompatibleDC(NULL);
-	bitmap = CreateDIBSection(dc, (BITMAPINFO*)&bih, DIB_RGB_COLORS, (void**)&(bitmap_buf), 0, 0);
 }
 
 bool MeterWebkit::Update()
@@ -115,7 +114,7 @@ Gdiplus::Status HBitmapToBitmap(HBITMAP source, Gdiplus::PixelFormat pixel_forma
 		return s;
 
 	*result_out = target.release();
-
+	
 	return Gdiplus::Ok;
 }
 
@@ -129,7 +128,6 @@ bool MeterWebkit::Draw(Gfx::Canvas& canvas)
 	RectF rcDest((REAL)meterRect.X, (REAL)meterRect.Y, (REAL)meterRect.Width, (REAL)meterRect.Height);
 
 	//if (!m_TextFormat->IsInitialized()) return false;
-	if (m_webCore != nullptr) m_webCore->Update();
 
 	if (m_webCore != nullptr && m_webView != nullptr && !m_webView->IsLoading())
 	{
@@ -137,30 +135,25 @@ bool MeterWebkit::Draw(Gfx::Canvas& canvas)
 		
 		if (bmp)
 		{
-		//	bmp->SaveToPNG(WSLit("C:\\rainmeter\\test.png"));
-			Gdiplus::Bitmap* bitmapOutput = new Bitmap(meterRect.Width, meterRect.Height, &graphics);
+			unsigned char* bitmap_buf = 0;
+			HDC dc = CreateCompatibleDC(NULL);
+			HBITMAP bitmap = CreateDIBSection(dc, (BITMAPINFO*)&bih, DIB_RGB_COLORS, (void**)&(bitmap_buf), 0, 0);
 
 			bmp->CopyTo(bitmap_buf, 512 * 4, 4, false, false);
-			bmp->set_is_dirty(false);
-		//	
-			HBitmapToBitmap(bitmap, PixelFormat32bppARGB, &bitmapOutput);
-			canvas.DrawBitmap(bitmapOutput, meterRect, meterRect);
+			Gdiplus::Bitmap *outputBmp;
+			HBitmapToBitmap(bitmap, PixelFormat32bppARGB, (Gdiplus::Bitmap**)&outputBmp);
+			canvas.DrawBitmap(outputBmp, meterRect, meterRect);
 
-			delete bitmapOutput;
+			delete outputBmp;
+			DeleteObject(bitmap);
+			bitmap = NULL;
+			DeleteDC(dc);
+			bitmapOutput = NULL;
+			bitmap_buf = 0;
 		}
 	}
 
-	/**
-		LPCWSTR string = m_Text.c_str();
-		UINT stringLen = (UINT)m_Text.length();
-
-		canvas.SetTextAntiAliasing(m_AntiAlias);
-
-		SolidBrush solidBrush(m_Color);
-		canvas.DrawTextW(string, (UINT)stringLen, *m_TextFormat, rcDest, solidBrush);
-	*/
 	canvas.EndGdiplusContext();
-
 	return true;
 }
 

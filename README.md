@@ -7,3 +7,5 @@ Fork Info, this is a customized version of rainmeter with a WebkitMeter widget a
 ![alt text](http://up2go.us/static/img/html5_clocks_in_rm.PNG "Working in rainmeter")
 
 ~* WARNING: brand new code *~
+
+Requires the Awesomium redistributable files (find in bin and put in the same folder as rainmeter.exe)
