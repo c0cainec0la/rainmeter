@@ -30,6 +30,19 @@
 #include "UpdateCheck.h"
 #include "../Version.h"
 
+//#define _MEM_LEAK_DEBUG
+
+#ifdef _MEM_LEAK_DEBUG
+#define _CRTDBG_MAP_ALLOC
+
+#ifndef DBG_NEW      
+#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )      
+#define new DBG_NEW  
+#endif
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 using namespace Gdiplus;
 
 enum TIMER
@@ -124,6 +137,10 @@ Rainmeter::Rainmeter() :
 	m_GDIplusToken(),
 	m_GlobalOptions()
 {
+#ifdef _MEM_LEAK_DEBUG
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
 	CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	InitCommonControls();
@@ -139,6 +156,10 @@ Rainmeter::Rainmeter() :
 */
 Rainmeter::~Rainmeter()
 {
+#ifdef _MEM_LEAK_DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
+
 	CoUninitialize();
 
 	GdiplusShutdown(m_GDIplusToken);
@@ -528,6 +549,9 @@ LRESULT CALLBACK Rainmeter::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 	switch (uMsg)
 	{
 	case WM_DESTROY:
+#ifdef _MEM_LEAK_DEBUG
+		_CrtDumpMemoryLeaks();
+#endif
 		PostQuitMessage(0);
 		break;
 

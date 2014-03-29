@@ -33,6 +33,7 @@
 #include "MeasurePlugin.h"
 #include "MeterButton.h"
 #include "MeterString.h"
+#include "MeterWebkit.h"
 #include "TintedImage.h"
 #include "MeasureScript.h"
 #include "../Version.h"
@@ -140,7 +141,8 @@ MeterWindow::MeterWindow(const std::wstring& folderPath, const std::wstring& fil
 	m_UpdateCounter(),
 	m_MouseMoveCounter(),
 	m_FontCollection(),
-	m_ToolTipHidden(false)
+	m_ToolTipHidden(false),
+	m_webkit(nullptr)
 {
 	if (!c_DwmInstance && IsWindowsVistaOrGreater() &&
 		(c_DwmInstance = System::RmLoadLibrary(L"dwmapi.dll")) != nullptr)
@@ -3185,6 +3187,32 @@ void MeterWindow::HandleButtons(POINT pos, BUTTONPROC proc, bool execute)
 			}
 		}
 
+		// Extended this for MeterWebkit's
+		MeterWebkit* webkit = nullptr;
+		if ((*j)->GetTypeID() == TypeID<MeterWebkit>())
+		{
+			webkit = (MeterWebkit*)(*j);
+			m_webkit = webkit;
+			if (webkit)
+			{
+				switch (proc)
+				{
+				case BUTTONPROC_DOWN:
+					redraw |= webkit->MouseDown(pos);
+					break;
+
+				case BUTTONPROC_UP:
+					redraw |= webkit->MouseUp(pos, execute);
+					break;
+
+				case BUTTONPROC_MOVE:
+				default:
+					redraw |= webkit->MouseMove(pos);
+					break;
+				}
+			}
+		}
+
 		// Get cursor if required
 		if (!cursor && (*j)->GetMouse().GetCursorState())
 		{
@@ -3351,10 +3379,18 @@ LRESULT MeterWindow::OnMouseScrollMove(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	MapWindowPoints(nullptr, m_Window, &pos, 1);
 
+	const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+
+	if (m_webkit != nullptr)
+	{
+		Awesomium::WebView* view = m_webkit->GetWebview();
+		view->Focus();
+		view->InjectMouseWheel(delta, 0);
+	}
+
 	// Handle buttons
 	HandleButtons(pos, BUTTONPROC_MOVE);
 
-	const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
 	DoAction(pos.x, pos.y, (delta < 0) ? MOUSE_MW_DOWN : MOUSE_MW_UP, false);
 
 	return 0;
@@ -4241,6 +4277,29 @@ LRESULT MeterWindow::OnMiddleButtonDoubleClick(UINT uMsg, WPARAM wParam, LPARAM 
 }
 
 /*
+** Runs the action when a key is pressed
+**
+*/
+LRESULT MeterWindow::OnKeyboardEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (m_webkit != nullptr)
+	{
+		Awesomium::WebView* view = m_webkit->GetWebview(); 
+		Awesomium::WebKeyboardEvent k(uMsg, wParam, lParam);
+//		Awesomium::WebKeyboardEvent k(WM_KEYUP, wParam, lParam);
+	//	Awesomium::WebKeyboardEvent k2(WM_KEYDOWN, wParam, lParam);
+	//	Awesomium::WebKeyboardEvent k3(WM_CHAR, wParam, lParam);
+		m_webkit->SetFocus(true);
+		view->Focus();
+	//	view->InjectKeyboardEvent(k3);
+	//	view->InjectKeyboardEvent(k2);
+		view->InjectKeyboardEvent(k);
+	}
+
+	return 0;
+}
+
+/*
 ** Runs the action when a X mouse button is down
 **
 */
@@ -4453,6 +4512,7 @@ bool MeterWindow::DoAction(int x, int y, MOUSEACTION action, bool test)
 bool MeterWindow::DoMoveAction(int x, int y, MOUSEACTION action)
 {
 	bool buttonFound = false;
+	bool webkitFound = false;
 
 	// Check if the hitpoint was over some meter
 	std::vector<Meter*>::const_reverse_iterator j = m_Meters.rbegin();
@@ -4497,6 +4557,33 @@ bool MeterWindow::DoMoveAction(int x, int y, MOUSEACTION action)
 					}
 				}
 
+				// Handle webkit
+				MeterWebkit* webkit = nullptr;
+				if ((*j)->GetTypeID() == TypeID<MeterWebkit>())
+				{
+					webkit = (MeterWebkit*)(*j);
+					if (webkit)
+					{
+						// revisit this for multiple webkits
+						if (!webkitFound)
+						{
+							m_webkit = webkit;
+							webkit->SetFocus(true);
+
+							/*POINT p;
+							p.x = x;
+							p.y = y;
+
+							webkit->MouseMove(p);
+							webkitFound = true; */
+						}
+						else
+						{
+							webkit->SetFocus(false);
+						}
+					}
+				}
+
 				if (!(*j)->IsMouseOver())
 				{
 					const Mouse& mouse = (*j)->GetMouse();
@@ -4528,6 +4615,13 @@ bool MeterWindow::DoMoveAction(int x, int y, MOUSEACTION action)
 					{
 						MeterButton* button = (MeterButton*)(*j);
 						button->SetFocus(false);
+					}
+
+					// Handle Webkit
+					if ((*j)->GetTypeID() == TypeID<MeterWebkit>())
+					{
+						MeterWebkit* webkit = (MeterWebkit*)(*j);
+						webkit->SetFocus(false);
 					}
 
 					//LogDebugF(L"MeterLeave: %s - [%s]", m_FolderPath.c_str(), (*j)->GetName());
@@ -4612,6 +4706,13 @@ LRESULT MeterWindow::OnMouseInput(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (ri.data.mouse.usButtonFlags == RI_MOUSE_WHEEL)
 			{
 				OnMouseScrollMove(WM_INPUT, wheelDelta, wheelPos);
+				/*
+				if (m_webkit != nullptr)
+				{
+					Awesomium::WebView* view = m_webkit->GetWebview();
+					view->Focus();
+					view->InjectMouseWheel(wheelPos, 0);
+				}*/
 			}
 			else if (ri.data.mouse.usButtonFlags == RI_MOUSE_HORIZONTAL_WHEEL)
 			{
@@ -4723,6 +4824,9 @@ LRESULT CALLBACK MeterWindow::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 	MESSAGE(OnSetWindowFocus, WM_SETFOCUS)
 	MESSAGE(OnSetWindowFocus, WM_KILLFOCUS)
 	MESSAGE(OnWake, WM_POWERBROADCAST)
+	MESSAGE(OnKeyboardEvent, WM_CHAR)
+	MESSAGE(OnKeyboardEvent, WM_KEYDOWN)
+	MESSAGE(OnKeyboardEvent, WM_KEYUP)
 	END_MESSAGEPROC
 }
 

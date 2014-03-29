@@ -22,6 +22,7 @@
 #include <windows.h>
 #include <dwmapi.h>
 #include <string>
+#include <stdint.h>
 #include <list>
 #include "CommandHandler.h"
 #include "ConfigParser.h"
@@ -210,8 +211,10 @@ public:
 	Measure* GetMeasure(const std::wstring& measureName) { return m_Parser.GetMeasure(measureName); }
 
 	friend class DialogManage;
-
+	friend class MeterWebkit;
 protected:
+	MeterWebkit* m_webkit;
+
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK InitialWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -252,6 +255,7 @@ protected:
 	LRESULT OnDisplayChange(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnSetWindowFocus(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnWake(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnKeyboardEvent(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
 	enum STATE
@@ -432,6 +436,7 @@ private:
 	static decltype(DwmGetColorizationColor)* c_DwmGetColorizationColor;
 	static decltype(DwmSetWindowAttribute)* c_DwmSetWindowAttribute;
 	static decltype(DwmIsCompositionEnabled)* c_DwmIsCompositionEnabled;
+
 };
 
 #endif
