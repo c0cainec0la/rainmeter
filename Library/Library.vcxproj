@@ -17,14 +17,15 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>.\;lua/include;lua/lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;lua/include;lua/lua;$(AWE_DIR)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USRDLL;LIBRARY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Wininet.lib;UxTheme.lib;Winmm.lib;gdiplus.lib;Iphlpapi.lib;shlwapi.lib;d2d1.lib;dwrite.lib;windowscodecs.lib;Version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;Wininet.lib;UxTheme.lib;Winmm.lib;gdiplus.lib;Iphlpapi.lib;shlwapi.lib;d2d1.lib;dwrite.lib;windowscodecs.lib;Version.lib;awesomium.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>Winmm.dll;Version.dll;d2d1.dll;dwrite.dll;$(DelayLoadTestDLL)</DelayLoadDLLs>
       <ModuleDefinitionFile>Exports.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(AWE_DIR)build\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -67,6 +68,7 @@
     <ClCompile Include="MeterRotator.cpp" />
     <ClCompile Include="MeterRoundLine.cpp" />
     <ClCompile Include="MeterString.cpp" />
+    <ClCompile Include="MeterWebkit.cpp" />
     <ClCompile Include="MeterWindow.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Rainmeter.cpp" />
@@ -131,6 +133,7 @@
     <ClInclude Include="MeterRotator.h" />
     <ClInclude Include="MeterRoundLine.h" />
     <ClInclude Include="MeterString.h" />
+    <ClInclude Include="MeterWebkit.h" />
     <ClInclude Include="MeterWindow.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="Rainmeter.h" />

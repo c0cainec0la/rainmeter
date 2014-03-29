@@ -28,6 +28,7 @@
 #include "MeterRoundLine.h"
 #include "MeterRotator.h"
 #include "MeterButton.h"
+#include "MeterWebkit.h"
 #include "Measure.h"
 #include "Rainmeter.h"
 #include "../Common/Gfx/Canvas.h"
@@ -436,6 +437,10 @@ Meter* Meter::Create(const WCHAR* meter, MeterWindow* meterWindow, const WCHAR* 
 	{
 		return new MeterButton(meterWindow, name);
 	}
+	else if (_wcsicmp(L"WEBKIT", meter) == 0)
+	{
+		return new MeterWebkit(meterWindow, name);
+	}
 
 	LogErrorF(meterWindow, L"Meter=%s is not valid in [%s]", meter, name);
 
@@ -681,7 +686,7 @@ bool Meter::Draw(Gfx::Canvas& canvas)
 		int x = GetX();
 		int y = GetY();
 
-		Rect r(x, y, m_W, m_H);
+		Gdiplus::Rect r(x, y, m_W, m_H);
 
 		if (m_SolidColor.GetValue() == m_SolidColor2.GetValue())
 		{
@@ -730,7 +735,7 @@ bool Meter::Draw(Gfx::Canvas& canvas)
 		Pen dark(darkColor);
 
 		// The bevel is drawn outside the meter
-		Rect rect(x - 2, y - 2, m_W + 4, m_H + 4);
+		Gdiplus::Rect rect(x - 2, y - 2, m_W + 4, m_H + 4);
 		DrawBevel(graphics, rect, light, dark);
 
 		canvas.EndGdiplusContext();
@@ -742,7 +747,7 @@ bool Meter::Draw(Gfx::Canvas& canvas)
 /*
 ** Draws a bevel inside the given area
 */
-void Meter::DrawBevel(Graphics& graphics, const Rect& rect, const Pen& light, const Pen& dark)
+void Meter::DrawBevel(Graphics& graphics, const Gdiplus::Rect& rect, const Pen& light, const Pen& dark)
 {
 	int l = rect.GetLeft();
 	int r = rect.GetRight() - 1;
