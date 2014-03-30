@@ -17,3 +17,9 @@ Latest Build
 ========
 
 Test builds are ALPHA code quality and really should only be used for testing purposes. 
+
+Install rainmeter and close it, run the app in this folder (or replace your rainmeter exe with the files issued in win32-release, instability is almost a guarantee but i haven't encountered any big problems in daytime use)
+
+Download For Windows @: https://github.com/c0cainec0la/insanemeter/blob/master/win32-Release.zip?raw=true
+
+Enjoy, couple test skins provided. Example skin code: http://paste.pm/fef.ini (See Javascript, CSS and URL for injecting scripts / css, Library/MeterWebkit.cpp for implementation details.)
