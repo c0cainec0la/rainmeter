@@ -103,6 +103,7 @@ private:
 	//void LoadImage(const std::wstring& imageName, bool bLoadAlways);
 
 	bool m_NeedsRedraw;
+	bool m_AlwaysReinject;
 
 	//DRAWMODE m_DrawMode;
 

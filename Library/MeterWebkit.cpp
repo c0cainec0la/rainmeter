@@ -60,7 +60,8 @@ m_webView(nullptr),
 m_Focus(false),
 m_Window(meterWindow),
 m_hasInjectedCss(false),
-m_hasInjectedScripts(false)
+m_hasInjectedScripts(false),
+m_AlwaysReinject(false)
 {
 }
 
@@ -82,6 +83,8 @@ void MeterWebkit::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	m_injectJavascript = parser.ReadString(section, L"Javascript", L"");
 	m_injectCSS = parser.ReadString(section, L"CSS", L"");
 
+	m_AlwaysReinject = parser.ReadBool(section, L"AlwaysReinject", false);
+
 	//m_Color = parser.ReadColor(section, L"FontColor", Color::Black);
 
 	InitWebview();
@@ -98,7 +101,7 @@ void MeterWebkit::InitWebview()
 		WSLit("C:\\rainmeter\\sessions\\"), WebPreferences());
 
 	Gdiplus::Rect meterRect = GetMeterRectPadding();
-	m_webView = m_webCore->CreateWebView(500, 500, m_session);
+	m_webView = m_webCore->CreateWebView(meterRect.Width, meterRect.Height, m_session);
 	
 	char *dest = new char[8024];
 	const wchar_t *p = m_Text.c_str();
@@ -117,8 +120,8 @@ void MeterWebkit::InitWebview()
 	bih.biBitCount = 32;
 	bih.biCompression = BI_RGB;
 	bih.biPlanes = 1;
-	bih.biWidth = 512;
-	bih.biHeight = -(512);
+	bih.biWidth = meterRect.Width;
+	bih.biHeight = -(meterRect.Height);
 }
 
 bool MeterWebkit::Update()
@@ -176,6 +179,7 @@ bool MeterWebkit::Draw(Gfx::Canvas& canvas)
 
 //	m_hasInjectedCss = false; // always rerun until a proper handler to check if url changed is here
 
+	if (m_AlwaysReinject == true) m_hasInjectedCss = false;
 	if (m_webCore != nullptr && m_webView != nullptr)
 	{
 		if (m_webView->IsLoading() == false && !m_hasInjectedScripts)
@@ -197,6 +201,8 @@ bool MeterWebkit::Draw(Gfx::Canvas& canvas)
 			m_hasInjectedScripts = true;
 		}
 
+		m_hasInjectedCss = false;
+
 		if (m_webView->IsLoading() == false && !m_hasInjectedCss)
 		{
 			if (m_injectCSS != std::wstring(L""))
@@ -209,9 +215,9 @@ bool MeterWebkit::Draw(Gfx::Canvas& canvas)
 				const wchar_t *p = contents.c_str();
 				wcstombs(dest, p, 8024 * 4);
 
-				WebString inject = WSLit("el = document.createElement('style'); el.type='text/css'; el.innerHTML='");
+				WebString inject = WSLit("el = document.createElement('style'); el.id='custom_styles'; if (document.querySelectorAll('#custom_styles').length != 0) { el = document.querySelectorAll('#custom_styles')[0]; } el.type='text/css'; el.innerHTML='");
 				WebString code = WebString::CreateFromUTF8(dest, contents.length());
-
+				 
 				inject.Append(code);
 				inject.Append(WSLit("'; document.body.appendChild(el);"));
 
@@ -231,7 +237,7 @@ bool MeterWebkit::Draw(Gfx::Canvas& canvas)
 			HDC dc = CreateCompatibleDC(NULL);
 			HBITMAP bitmap = CreateDIBSection(dc, (BITMAPINFO*)&bih, DIB_RGB_COLORS, (void**)&(bitmap_buf), 0, 0);
 
-			bmp->CopyTo(bitmap_buf, 512 * 4, 4, false, false);
+			bmp->CopyTo(bitmap_buf, meterRect.Width * 4, 4, false, false);
 			Gdiplus::Bitmap *outputBmp;
 			HBitmapToBitmap(bitmap, PixelFormat32bppARGB, (Gdiplus::Bitmap**)&outputBmp);
 			canvas.DrawBitmap(outputBmp, meterRect, meterRect);
