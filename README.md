@@ -4,8 +4,10 @@ For build instructions, see [this](https://github.com/rainmeter/rainmeter/blob/m
 
 Fork Info, this is a customized version of rainmeter with a WebkitMeter widget added on to the library natively.
 
+Early tests..
 ![alt text](http://up2go.us/static/img/html5_clocks_in_rm.PNG "Working in rainmeter")
 
+Progressed into something much nicer
 ![alt text](http://up2go.us/static/img/wtf_webpushers.PNG "FB + Clocks + Shit")
 
 
