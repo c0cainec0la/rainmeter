@@ -1,6 +1,6 @@
 *Rainmeter* is a desktop customization tool for Windows. For more information and downloads, visit [rainmeter.net](http://rainmeter.net/).
 
-For build instructions, see [this](https://github.com/rainmeter/rainmeter/blob/master/Docs/Building.md).
+For build instructions, see [this](https://github.com/rainmeter/rainmeter/blob/master/Docs/Building.md). Also install the awesomium SDK from https://www.awesomium.com/download/
 
 Fork Info, this is a customized version of rainmeter with a WebkitMeter widget added on to the library natively.
 
