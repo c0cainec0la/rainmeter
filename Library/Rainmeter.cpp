@@ -32,6 +32,9 @@
 
 //#define _MEM_LEAK_DEBUG
 
+//#define RM_DEBUG
+
+#ifdef RM_DEBUG
 #ifdef _MEM_LEAK_DEBUG
 #define _CRTDBG_MAP_ALLOC
 
@@ -41,6 +44,7 @@
 #endif
 #include <stdlib.h>
 #include <crtdbg.h>
+#endif
 #endif
 
 using namespace Gdiplus;
